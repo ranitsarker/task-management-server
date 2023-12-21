@@ -32,6 +32,8 @@ const client = new MongoClient(uri, {
 
 async function run() {
   try {
+    const tasksCollection = client.db('taskManagement').collection('tasks');
+
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
 
@@ -61,7 +63,45 @@ async function run() {
     })
 
 
-    
+
+// endpoint to create a new task
+app.post('/create-task', async (req, res) => {
+  try {
+    const { title, description, deadline, priority, createdBy } = req.body;
+
+    // Ensure that the required fields are provided
+    if (!title || !description || !deadline || !priority || !createdBy) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    // Create a new task object with user information
+    const newTask = {
+      title,
+      description,
+      deadline,
+      priority,
+      createdBy,
+    };
+
+    // Insert the task into the tasks collection
+    const result = await tasksCollection.insertOne(newTask);
+
+    // Check if the task was successfully inserted
+    if (result && result.insertedId) {
+      console.log('Task inserted successfully. Inserted ID:', result.insertedId);
+      return res.status(201).json({ success: true, task: newTask });
+    } else {
+      console.error('Failed to insert task. Result:', result);
+      return res.status(500).json({ error: 'Failed to create task' });
+    }
+  } catch (error) {
+    console.error('Error creating task:', error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+
+
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
