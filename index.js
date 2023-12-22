@@ -12,6 +12,9 @@ app.use(cors({
   origin: [
     'http://localhost:5173', 
     'http://localhost:5174',
+    'https://task-management-e6a25.web.app',
+    'https://task-management-e6a25.firebaseapp.com',
+
   
   ], 
   credentials: true
@@ -32,10 +35,8 @@ const client = new MongoClient(uri, {
 
 async function run() {
   try {
-    const tasksCollection = client.db('taskManagement').collection('tasks');
-
-    // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
+    const tasksCollection = client.db('taskManagement').collection('tasks');
 
     // auth related endpoint or api
     app.post('/jwt', async(req, res) => {
@@ -115,8 +116,8 @@ app.get('/get-user-tasks/:userId', async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
-// Add a new endpoint to update task status
-app.put('/update-task-status/:taskId', async (req, res) => {
+
+app.patch('/update-task-status/:taskId', async (req, res) => {
   try {
     const taskId = req.params.taskId;
     const { newStatus } = req.body;
@@ -136,6 +137,8 @@ app.put('/update-task-status/:taskId', async (req, res) => {
     return res.status(500).json({ error: 'Internal server error' });
   }
 });
+
+
 
 
     // Send a ping to confirm a successful connection
