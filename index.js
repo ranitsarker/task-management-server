@@ -117,27 +117,43 @@ app.get('/get-user-tasks/:userId', async (req, res) => {
   }
 });
 
-app.patch('/update-task-status/:taskId', async (req, res) => {
+// Update endpoint to use tasksCollection directly
+app.put('/update-task/:taskId', async (req, res) => {
   try {
     const taskId = req.params.taskId;
-    const { newStatus } = req.body;
+    const { title, description, deadline, priority } = req.body;
 
-    // Update the task status in the tasks collection
-    const result = await tasksCollection.updateOne({ _id: ObjectId(taskId) }, { $set: { status: newStatus } });
+    // Ensure that the required fields are provided
+    if (!title || !description || !deadline || !priority) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
 
-    if (result.modifiedCount > 0) {
-      console.log('Task status updated successfully.');
+    // Update the task in the tasks collection
+    const result = await tasksCollection.updateOne(
+      { _id: new ObjectId(taskId) },
+      {
+        $set: {
+          title,
+          description,
+          deadline,
+          priority,
+        },
+      }
+    );
+
+    // Check if the task was successfully updated
+    if (result && result.modifiedCount > 0) {
+      console.log('Task updated successfully. Task ID:', taskId);
       return res.status(200).json({ success: true });
     } else {
-      console.error('Failed to update task status.');
-      return res.status(500).json({ error: 'Failed to update task status' });
+      console.error('Failed to update task. Result:', result);
+      return res.status(500).json({ error: 'Failed to update task' });
     }
   } catch (error) {
-    console.error('Error updating task status:', error);
+    console.error('Error updating task:', error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 });
-
 
 
 
