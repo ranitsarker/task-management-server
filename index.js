@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const app = express();
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 require('dotenv').config();
 const jwt = require('jsonwebtoken');
 const cookieParser = require('cookie-parser');
@@ -73,14 +73,16 @@ app.post('/create-task', async (req, res) => {
     if (!title || !description || !deadline || !priority || !createdBy) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
-
+    // Extract display name and email from createdBy object
+    const { displayName, email } = createdBy;
     // Create a new task object with user information
     const newTask = {
       title,
       description,
       deadline,
       priority,
-      createdBy,
+      createdBy: { displayName, email },
+      status: 'todo',
     };
 
     // Insert the task into the tasks collection
@@ -100,6 +102,40 @@ app.post('/create-task', async (req, res) => {
   }
 });
 
+// Add a new endpoint to get tasks for a specific user
+app.get('/get-user-tasks/:userId', async (req, res) => {
+  try {
+    const userId = req.params.userId;
+
+    // Fetch tasks for the specified user from the tasks collection
+    const tasks = await tasksCollection.find({ 'createdBy.email': userId }).toArray();
+    res.status(200).json({ success: true, tasks });
+  } catch (error) {
+    console.error('Error fetching tasks for user:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+// Add a new endpoint to update task status
+app.put('/update-task-status/:taskId', async (req, res) => {
+  try {
+    const taskId = req.params.taskId;
+    const { newStatus } = req.body;
+
+    // Update the task status in the tasks collection
+    const result = await tasksCollection.updateOne({ _id: ObjectId(taskId) }, { $set: { status: newStatus } });
+
+    if (result.modifiedCount > 0) {
+      console.log('Task status updated successfully.');
+      return res.status(200).json({ success: true });
+    } else {
+      console.error('Failed to update task status.');
+      return res.status(500).json({ error: 'Failed to update task status' });
+    }
+  } catch (error) {
+    console.error('Error updating task status:', error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
 
 
     // Send a ping to confirm a successful connection
