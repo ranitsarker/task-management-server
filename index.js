@@ -155,6 +155,27 @@ app.put('/update-task/:taskId', async (req, res) => {
   }
 });
 
+// Add a new endpoint to delete a task
+app.delete('/delete-task/:taskId', async (req, res) => {
+  try {
+    const taskId = req.params.taskId;
+
+    // Delete the task from the tasks collection
+    const result = await tasksCollection.deleteOne({ _id: new ObjectId(taskId) });
+
+    // Check if the task was successfully deleted
+    if (result && result.deletedCount > 0) {
+      console.log('Task deleted successfully. Task ID:', taskId);
+      return res.status(200).json({ success: true });
+    } else {
+      console.error('Failed to delete task. Result:', result);
+      return res.status(500).json({ error: 'Failed to delete task' });
+    }
+  } catch (error) {
+    console.error('Error deleting task:', error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
 
 
     // Send a ping to confirm a successful connection
